@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>경사하강법 파라미터 튜닝</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+        
+        input[type="number"] {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .value-display {
+            color: #667eea;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        
+        button {
+            padding: 12px 30px;
+            font-size: 1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .start-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .reset-btn {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .reset-btn:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+        
+        .charts {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .chart-title {
+            text-align: center;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .rating-charts {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        
+        .rating-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .rating-title {
+            text-align: center;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .rating-subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            display: none;
+        }
+        
+        .status.training {
+            background: #fff3cd;
+            color: #856404;
+            display: block;
+        }
+        
+        .status.complete {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.85em;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 선형회귀 경사하강법 파라미터 튜닝</h1>
+        <p class="subtitle">Epoch와 학습률을 조정하며 최적의 모델을 찾아보세요!</p>
+        
+        <div class="status" id="status"></div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="epochs">Epoch (반복 횟수): <span class="value-display" id="epochValue">100</span></label>
+                <input type="number" id="epochs" min="10" max="1000" step="10" value="100">
+            </div>
+            
+            <div class="control-group">
+                <label for="learningRate">학습률 (Learning Rate): <span class="value-display" id="lrValue">0.01</span></label>
+                <input type="number" id="learningRate" min="0.0001" max="0.5" step="0.0001" value="0.01">
+            </div>
+        </div>
+        
+        <div class="button-group">
+            <button class="start-btn" onclick="trainModel()">🚀 학습 시작</button>
+            <button class="reset-btn" onclick="resetAll()">🔄 전체 초기화</button>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-label">현재 MSE</div>
+                <div class="stat-value" id="currentMSE">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">최종 기울기 (w)</div>
+                <div class="stat-value" id="finalW">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">최종 절편 (b)</div>
+                <div class="stat-value" id="finalB">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">학습 시간</div>
+                <div class="stat-value" id="trainTime">-</div>
+            </div>
+        </div>
+        
+        <div class="charts">
+            <div class="chart-container">
+                <div class="chart-title">📊 데이터와 회귀선</div>
+                <canvas id="dataChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">📉 손실(Loss) 변화</div>
+                <canvas id="lossChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="rating-charts">
+            <div class="rating-container">
+                <div class="rating-title">⚡ 학습 효율성 변화</div>
+                <div class="rating-subtitle">시도할수록 개선되고 있나요? (높을수록 효율적)</div>
+                <canvas id="speedChart"></canvas>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #28a745;"></div>
+                        <span>매우 효율적 (&gt; 1.0)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #ffc107;"></div>
+                        <span>보통 (0.1-1.0)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #dc3545;"></div>
+                        <span>비효율적 (&lt; 0.1)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #6c757d;"></div>
+                        <span>발산</span>
+                    </div>
+                </div>
+            </div>
+            <div class="rating-container">
+                <div class="rating-title">🎯 손실(Loss) 평가</div>
+                <div class="rating-subtitle">낮을수록 좋음 (최종 MSE 기준)</div>
+                <canvas id="lossRatingChart"></canvas>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #28a745;"></div>
+                        <span>우수 (MSE &lt; 1)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #ffc107;"></div>
+                        <span>보통 (1 ≤ MSE &lt; 10)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #fd7e14;"></div>
+                        <span>나쁨 (10 ≤ MSE &lt; 100)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #dc3545;"></div>
+                        <span>매우 나쁨 (MSE ≥ 100)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: #6c757d;"></div>
+                        <span>발산</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 고정된 데이터셋
+        const X = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        const y = [2.8, 5.2, 7.1, 9.5, 11.8, 13.9, 16.2, 18.5, 20.7, 23.1];
+        
+        let dataChart, lossChart, speedChart, lossRatingChart;
+        let history = [];
+        
+        // 입력값 업데이트
+        document.getElementById('epochs').addEventListener('input', function(e) {
+            document.getElementById('epochValue').textContent = e.target.value;
+        });
+        
+        document.getElementById('learningRate').addEventListener('input', function(e) {
+            document.getElementById('lrValue').textContent = parseFloat(e.target.value).toFixed(4);
+        });
+        
+        // 차트 초기화
+        function initCharts() {
+            const dataCtx = document.getElementById('dataChart').getContext('2d');
+            const lossCtx = document.getElementById('lossChart').getContext('2d');
+            const speedCtx = document.getElementById('speedChart').getContext('2d');
+            const lossRatingCtx = document.getElementById('lossRatingChart').getContext('2d');
+            
+            if (dataChart) dataChart.destroy();
+            if (lossChart) lossChart.destroy();
+            if (speedChart) speedChart.destroy();
+            if (lossRatingChart) lossRatingChart.destroy();
+            
+            dataChart = new Chart(dataCtx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: '실제 데이터',
+                        data: X.map((x, i) => ({x: x, y: y[i]})),
+                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                        pointRadius: 6
+                    }, {
+                        label: '예측선',
+                        data: [],
+                        type: 'line',
+                        borderColor: 'rgba(220, 53, 69, 0.8)',
+                        borderWidth: 3,
+                        fill: false,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'X',
+                                font: { size: 14, weight: 'bold' }
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'y',
+                                font: { size: 14, weight: 'bold' }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            lossChart = new Chart(lossCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'MSE Loss',
+                        data: [],
+                        borderColor: 'rgba(102, 126, 234, 0.8)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Epoch',
+                                font: { size: 14, weight: 'bold' }
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'MSE',
+                                font: { size: 14, weight: 'bold' }
+                            }
+                        }
+                    }
+                }
+            });
+
+            speedChart = new Chart(speedCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '학습 효율성',
+                        data: [],
+                        borderColor: 'rgba(102, 126, 234, 0.8)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        borderWidth: 3,
+                        pointRadius: 6,
+                        pointHoverRadius: 10,
+                        pointBackgroundColor: [],
+                        pointBorderColor: [],
+                        pointBorderWidth: []
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '시도 회차',
+                                font: { size: 12, weight: 'bold' }
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '효율성 (1 / MSE × Epoch)',
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const idx = context.dataIndex;
+                                    const h = history[idx];
+                                    if (h.diverged) {
+                                        return [
+                                            `효율성: 발산 (0)`,
+                                            `학습률: ${h.lr.toFixed(4)}`,
+                                            `Epoch: ${h.epochs}`,
+                                            `MSE: ∞`,
+                                            `시간: ${h.time}s`
+                                        ];
+                                    }
+                                    const efficiency = 1 / (h.mse * h.epochs);
+                                    return [
+                                        `효율성: ${efficiency.toFixed(4)}`,
+                                        `학습률: ${h.lr.toFixed(4)}`,
+                                        `Epoch: ${h.epochs}`,
+                                        `MSE: ${h.mse.toFixed(4)}`,
+                                        `시간: ${h.time}s`
+                                    ];
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            lossRatingChart = new Chart(lossRatingCtx, {
+                type: 'scatter',
+                data: {
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '학습률 (Learning Rate)',
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            type: 'logarithmic'
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Epoch',
+                                font: { size: 12, weight: 'bold' }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const point = context.raw;
+                                    return [
+                                        `학습률: ${point.lr}`,
+                                        `Epoch: ${point.y}`,
+                                        `MSE: ${point.mse}`,
+                                        `효율성: ${point.efficiency}`,
+                                        `시간: ${point.time}s`
+                                    ];
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 평균 제곱 오차 계산
+        function calculateMSE(w, b) {
+            let sum = 0;
+            for (let i = 0; i < X.length; i++) {
+                const pred = w * X[i] + b;
+                sum += Math.pow(y[i] - pred, 2);
+            }
+            return sum / X.length;
+        }
+        
+        // 경사하강법으로 학습
+        async function trainModel() {
+            const epochs = parseInt(document.getElementById('epochs').value);
+            const lr = parseFloat(document.getElementById('learningRate').value);
+            
+            const startTime = performance.now();
+            
+            // 파라미터 초기화
+            let w = Math.random();
+            let b = Math.random();
+            
+            const lossHistory = [];
+            const n = X.length;
+            
+            // 상태 표시
+            const status = document.getElementById('status');
+            status.className = 'status training';
+            status.textContent = '🔄 학습 중...';
+            
+            let diverged = false;
+            
+            // 업데이트 주기 설정 (최소 50번은 업데이트)
+            const updateInterval = Math.max(1, Math.floor(epochs / 50));
+            
+            // 경사하강법 (실시간 업데이트)
+            for (let epoch = 0; epoch < epochs; epoch++) {
+                let dw = 0;
+                let db = 0;
+                
+                // 그래디언트 계산
+                for (let i = 0; i < n; i++) {
+                    const pred = w * X[i] + b;
+                    const error = pred - y[i];
+                    dw += (2/n) * error * X[i];
+                    db += (2/n) * error;
+                }
+                
+                // 파라미터 업데이트
+                w -= lr * dw;
+                b -= lr * db;
+                
+                // 발산 체크
+                if (!isFinite(w) || !isFinite(b) || Math.abs(w) > 1e10 || Math.abs(b) > 1e10) {
+                    diverged = true;
+                    w = Infinity;
+                    b = Infinity;
+                    const finalMSE = Infinity;
+                    
+                    // 발산 시 최종 상태 표시
+                    status.className = 'status';
+                    status.style.background = '#f8d7da';
+                    status.style.color = '#721c24';
+                    status.style.display = 'block';
+                    status.textContent = '⚠️ 발산! 학습률이 너무 큽니다. 더 작은 값(0.001~0.01)을 시도해보세요.';
+                    
+                    const endTime = performance.now();
+                    const trainTime = ((endTime - startTime) / 1000).toFixed(3);
+                    
+                    updateStats(finalMSE, w, b, trainTime, diverged);
+                    addToHistory(epochs, lr, finalMSE, w, b, trainTime, diverged);
+                    break;
+                }
+                
+                // 손실 기록
+                const mse = calculateMSE(w, b);
+                lossHistory.push({epoch: epoch, loss: mse});
+                
+                // 실시간 그래프 업데이트 (일정 주기마다)
+                if (epoch % updateInterval === 0 || epoch === epochs - 1) {
+                    updateCharts(w, b, lossHistory);
+                    updateStats(mse, w, b, '-', false);
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                }
+            }
+            
+            if (!diverged) {
+                const endTime = performance.now();
+                const trainTime = ((endTime - startTime) / 1000).toFixed(3);
+                const finalMSE = calculateMSE(w, b);
+                
+                // 최종 결과 업데이트
+                updateCharts(w, b, lossHistory);
+                updateStats(finalMSE, w, b, trainTime, false);
+                addToHistory(epochs, lr, finalMSE, w, b, trainTime, false);
+                
+                status.className = 'status complete';
+                status.textContent = '✅ 학습 완료!';
+                setTimeout(() => {
+                    status.style.display = 'none';
+                }, 2000);
+            }
+        }
+        
+        // 차트 업데이트
+        function updateCharts(w, b, lossHistory) {
+            // 회귀선 그리기
+            const lineData = X.map(x => ({x: x, y: w * x + b}));
+            dataChart.data.datasets[1].data = lineData;
+            dataChart.update('none');
+            
+            // 손실 차트 업데이트
+            lossChart.data.labels = lossHistory.map(h => h.epoch);
+            lossChart.data.datasets[0].data = lossHistory.map(h => h.loss);
+            lossChart.update('none');
+        }
+        
+        // 통계 업데이트
+        function updateStats(mse, w, b, time, diverged = false) {
+            if (diverged) {
+                document.getElementById('currentMSE').textContent = '∞';
+                document.getElementById('finalW').textContent = '∞';
+                document.getElementById('finalB').textContent = '∞';
+            } else {
+                document.getElementById('currentMSE').textContent = mse.toFixed(4);
+                document.getElementById('finalW').textContent = w.toFixed(4);
+                document.getElementById('finalB').textContent = b.toFixed(4);
+            }
+            document.getElementById('trainTime').textContent = time === '-' ? '-' : time + 's';
+        }
+        
+        // 학습 효율성 평가 색상 결정 (1 / (MSE × Epoch) - 높을수록 좋음)
+        function getEfficiencyColor(mse, epochs, diverged) {
+            if (diverged) return 'rgba(108, 117, 125, 0.8)'; // 회색
+            const efficiency = 1 / (mse * epochs);
+            if (efficiency > 1) return 'rgba(40, 167, 69, 0.8)'; // 초록 - 매우 효율적
+            if (efficiency > 0.1) return 'rgba(255, 193, 7, 0.8)'; // 노랑 - 보통
+            return 'rgba(220, 53, 69, 0.8)'; // 빨강 - 비효율적
+        }
+        
+        // Loss 평가 색상 결정
+        function getLossColor(mse, diverged) {
+            if (diverged) return 'rgba(108, 117, 125, 0.8)'; // 회색
+            if (mse < 1) return 'rgba(40, 167, 69, 0.8)'; // 초록 - 우수
+            if (mse < 10) return 'rgba(255, 193, 7, 0.8)'; // 노랑 - 보통
+            if (mse < 100) return 'rgba(253, 126, 20, 0.8)'; // 주황 - 나쁨
+            return 'rgba(220, 53, 69, 0.8)'; // 빨강 - 매우 나쁨
+        }
+        
+        // 기록 추가 및 평가 차트 업데이트
+        function addToHistory(epochs, lr, mse, w, b, time, diverged = false) {
+            history.push({
+                epochs: epochs,
+                lr: lr,
+                mse: diverged ? '∞' : mse,
+                w: w,
+                b: b,
+                time: time,
+                diverged: diverged
+            });
+            
+            updateRatingCharts();
+        }
+        
+        // 평가 차트 업데이트
+        function updateRatingCharts() {
+            // 학습 효율성 변화 차트 (라인 그래프)
+            const efficiencyData = [];
+            const pointColors = [];
+            const pointBorderColors = [];
+            const pointBorderWidths = [];
+            const labels = [];
+            
+            history.forEach((h, i) => {
+                labels.push(`시도 ${i + 1}`);
+                
+                if (h.diverged) {
+                    efficiencyData.push(0); // 발산한 경우 0
+                    pointColors.push('rgba(108, 117, 125, 0.8)');
+                } else {
+                    const efficiency = 1 / (h.mse * h.epochs); // 높을수록 좋음
+                    efficiencyData.push(efficiency);
+                    pointColors.push(getEfficiencyColor(h.mse, h.epochs, false));
+                }
+                
+                // 최신 데이터 강조
+                const isLatest = i === history.length - 1;
+                pointBorderColors.push(isLatest ? '#000' : 'transparent');
+                pointBorderWidths.push(isLatest ? 3 : 0);
+            });
+            
+            speedChart.data.labels = labels;
+            speedChart.data.datasets[0].data = efficiencyData;
+            speedChart.data.datasets[0].pointBackgroundColor = pointColors;
+            speedChart.data.datasets[0].pointBorderColor = pointBorderColors;
+            speedChart.data.datasets[0].pointBorderWidth = pointBorderWidths;
+            speedChart.data.datasets[0].pointRadius = history.map((_, i) => 
+                i === history.length - 1 ? 10 : 6
+            );
+            speedChart.update();
+            
+            // Loss 평가 차트 (기존 scatter)
+            const lossData = history.map((h, i) => {
+                const isLatest = i === history.length - 1;
+                const efficiency = h.diverged ? 0 : (1 / (h.mse * h.epochs)).toFixed(4);
+                return {
+                    x: h.lr,
+                    y: h.epochs,
+                    lr: h.lr.toFixed(4),
+                    time: h.time,
+                    mse: h.diverged ? '∞' : h.mse.toFixed(4),
+                    efficiency: efficiency,
+                    backgroundColor: getLossColor(h.diverged ? Infinity : h.mse, h.diverged),
+                    pointRadius: isLatest ? 12 : 8,
+                    pointHoverRadius: isLatest ? 16 : 12,
+                    borderWidth: isLatest ? 3 : 0,
+                    borderColor: isLatest ? '#000' : 'transparent'
+                };
+            });
+            
+            lossRatingChart.data.datasets = [{
+                data: lossData,
+                backgroundColor: lossData.map(d => d.backgroundColor),
+                pointRadius: lossData.map(d => d.pointRadius),
+                pointHoverRadius: lossData.map(d => d.pointHoverRadius),
+                borderWidth: lossData.map(d => d.borderWidth),
+                borderColor: lossData.map(d => d.borderColor)
+            }];
+            lossRatingChart.update();
+        }
+        
+        // 전체 초기화
+        function resetAll() {
+            history = [];
+            document.getElementById('epochs').value = 100;
+            document.getElementById('learningRate').value = 0.01;
+            document.getElementById('epochValue').textContent = '100';
+            document.getElementById('lrValue').textContent = '0.01';
+            document.getElementById('currentMSE').textContent = '-';
+            document.getElementById('finalW').textContent = '-';
+            document.getElementById('finalB').textContent = '-';
+            document.getElementById('trainTime').textContent = '-';
+            initCharts();
+        }
+        
+        // 초기화
+        initCharts();
+    </script>
+</body>
+</html>
