@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>정렬 알고리즘</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        select, button, input {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        select {
+            background: white;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        input[type="number"] {
+            width: 100px;
+        }
+        
+        .visualization {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            min-height: 400px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 4px;
+        }
+        
+        .bar {
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px 4px 0 0;
+            transition: all 0.3s;
+            min-width: 8px;
+            position: relative;
+        }
+        
+        .bar.comparing {
+            background: linear-gradient(180deg, #f093fb 0%, #f5576c 100%);
+            transform: scale(1.05);
+        }
+        
+        .bar.swapping {
+            background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
+            transform: scale(1.1);
+        }
+        
+        .bar.sorted {
+            background: linear-gradient(180deg, #43e97b 0%, #38f9d7 100%);
+        }
+        
+        .info-panel {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .info-panel h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .info-panel p {
+            line-height: 1.6;
+            color: #555;
+            margin-bottom: 10px;
+        }
+        
+        .step-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .step-info strong {
+            color: #667eea;
+        }
+        
+        .mode-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        
+        .mode-tab {
+            padding: 10px 30px;
+            background: #e0e0e0;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .mode-tab.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .step-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .array-display {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 2px solid #667eea;
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>정렬 알고리즘</h1>
+        
+        <div class="mode-tabs">
+            <button class="mode-tab active" onclick="switchMode('auto')">자동 정렬 보기</button>
+            <button class="mode-tab" onclick="switchMode('step')">단계별 실행</button>
+        </div>
+        
+        <div class="controls">
+            <select id="algorithmSelect">
+                <option value="bubble">버블 정렬</option>
+                <option value="insertion">삽입 정렬</option>
+                <option value="selection">선택 정렬</option>
+                <option value="quick">퀵 정렬</option>
+            </select>
+            
+            <label>배열 크기: <input type="number" id="arraySize" value="20" min="5" max="50"></label>
+            <label>속도: <input type="number" id="speed" value="300" min="10" max="5000" step="10"></label>
+            
+            <button onclick="generateNewArray()">새 배열 생성</button>
+            <button id="startBtn" onclick="startSort()">정렬 시작</button>
+            <button onclick="resetArray()">초기화</button>
+        </div>
+        
+        <div id="stepControls" class="step-controls" style="display: none;">
+            <button onclick="stepForward()">다음 단계 ▶</button>
+            <button onclick="stepBackward()">이전 단계 ◀</button>
+            <button onclick="resetSteps()">처음으로</button>
+        </div>
+        
+        <div class="info-panel" id="infoPanel">
+            <h3>알고리즘 설명</h3>
+            <p id="algorithmDescription"></p>
+        </div>
+        
+        <div class="visualization" id="visualization"></div>
+        
+        <div class="array-display" id="arrayDisplay"></div>
+        
+        <div class="step-info" id="stepInfo">
+            <strong>상태:</strong> <span id="statusText">배열을 생성하세요</span>
+        </div>
+    </div>
+    
+    <script>
+        let array = [];
+        let originalArray = [];
+        let sorting = false;
+        let currentMode = 'auto';
+        let steps = [];
+        let currentStep = 0;
+        
+        const descriptions = {
+            bubble: "인접한 두 원소를 비교하여 정렬합니다. 가장 큰 값이 매 회전마다 맨 뒤로 이동합니다.",
+            insertion: "배열을 정렬된 부분과 미정렬 부분으로 나누고, 미정렬 원소를 정렬된 부분의 적절한 위치에 삽입합니다.",
+            selection: "매 회전마다 미정렬 부분에서 최솟값을 찾아 맨 앞의 원소와 교환합니다.",
+            quick: "피벗을 기준으로 작은 값은 왼쪽, 큰 값은 오른쪽으로 분할하며 재귀적으로 정렬합니다.",
+            heap: "최대 힙을 구성한 후, 루트(최댓값)를 배열 끝으로 보내며 정렬합니다."
+        };
+        
+        function switchMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (mode === 'step') {
+                document.getElementById('stepControls').style.display = 'flex';
+                document.getElementById('speed').disabled = true;
+            } else {
+                document.getElementById('stepControls').style.display = 'none';
+                document.getElementById('speed').disabled = false;
+            }
+            
+            resetArray();
+        }
+        
+        function generateNewArray() {
+            const size = parseInt(document.getElementById('arraySize').value);
+            array = Array.from({length: size}, () => Math.floor(Math.random() * 300) + 20);
+            originalArray = [...array];
+            steps = [];
+            currentStep = 0;
+            updateVisualization();
+            updateArrayDisplay();
+            updateStatus('새 배열이 생성되었습니다');
+        }
+        
+        function resetArray() {
+            array = [...originalArray];
+            steps = [];
+            currentStep = 0;
+            sorting = false;
+            updateVisualization();
+            updateArrayDisplay();
+            updateStatus('배열이 초기화되었습니다');
+        }
+        
+        function updateVisualization(comparing = [], swapping = [], sorted = []) {
+            const viz = document.getElementById('visualization');
+            viz.innerHTML = '';
+            
+            const maxVal = Math.max(...array);
+            const barWidth = Math.min(50, (viz.offsetWidth - array.length * 4) / array.length);
+            
+            array.forEach((val, idx) => {
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.style.height = `${(val / maxVal) * 300}px`;
+                bar.style.width = `${barWidth}px`;
+                
+                if (comparing.includes(idx)) bar.classList.add('comparing');
+                if (swapping.includes(idx)) bar.classList.add('swapping');
+                if (sorted.includes(idx)) bar.classList.add('sorted');
+                
+                viz.appendChild(bar);
+            });
+        }
+        
+        function updateArrayDisplay() {
+            document.getElementById('arrayDisplay').textContent = array.join(', ');
+        }
+        
+        function updateStatus(text) {
+            document.getElementById('statusText').textContent = text;
+        }
+        
+        function updateDescription() {
+            const algo = document.getElementById('algorithmSelect').value;
+            document.getElementById('algorithmDescription').textContent = descriptions[algo];
+        }
+        
+        async function startSort() {
+            if (sorting) return;
+            if (array.length === 0) {
+                generateNewArray();
+            }
+            
+            sorting = true;
+            document.getElementById('startBtn').disabled = true;
+            
+            const algo = document.getElementById('algorithmSelect').value;
+            updateDescription();
+            
+            if (currentMode === 'auto') {
+                await executeSortingAlgorithm(algo);
+            } else {
+                generateSteps(algo);
+                if (steps.length > 0) {
+                    applyStep(0);
+                }
+            }
+            
+            document.getElementById('startBtn').disabled = false;
+            sorting = false;
+        }
+        
+        async function executeSortingAlgorithm(algo) {
+            switch(algo) {
+                case 'bubble': await bubbleSort(); break;
+                case 'insertion': await insertionSort(); break;
+                case 'selection': await selectionSort(); break;
+                case 'quick': await quickSort(0, array.length - 1); break;
+                case 'heap': await heapSort(); break;
+            }
+            updateStatus('정렬 완료!');
+        }
+        
+        function delay() {
+            return new Promise(resolve => setTimeout(resolve, parseInt(document.getElementById('speed').value)));
+        }
+        
+        async function bubbleSort() {
+            const n = array.length;
+            for (let i = 0; i < n - 1; i++) {
+                for (let j = 0; j < n - i - 1; j++) {
+                    updateVisualization([j, j + 1]);
+                    updateStatus(`비교 중: ${array[j]} vs ${array[j + 1]}`);
+                    await delay();
+                    
+                    if (array[j] > array[j + 1]) {
+                        [array[j], array[j + 1]] = [array[j + 1], array[j]];
+                        updateVisualization([], [j, j + 1]);
+                        updateArrayDisplay();
+                        updateStatus(`교환: 위치 ${j} ↔ ${j + 1}`);
+                        await delay();
+                    }
+                }
+                updateVisualization([], [], Array.from({length: n - i}, (_, k) => n - 1 - k));
+            }
+            updateVisualization([], [], Array.from({length: n}, (_, k) => k));
+        }
+        
+        async function insertionSort() {
+            const n = array.length;
+            for (let i = 1; i < n; i++) {
+                let key = array[i];
+                let j = i - 1;
+                
+                updateStatus(`삽입할 값: ${key}`);
+                
+                while (j >= 0 && array[j] > key) {
+                    updateVisualization([j, j + 1]);
+                    await delay();
+                    
+                    array[j + 1] = array[j];
+                    updateVisualization([], [j, j + 1]);
+                    updateArrayDisplay();
+                    updateStatus(`이동: ${array[j]} → 오른쪽`);
+                    await delay();
+                    j--;
+                }
+                array[j + 1] = key;
+                updateArrayDisplay();
+                updateVisualization([], [], Array.from({length: i + 1}, (_, k) => k));
+                await delay();
+            }
+            updateVisualization([], [], Array.from({length: n}, (_, k) => k));
+        }
+        
+        async function selectionSort() {
+            const n = array.length;
+            for (let i = 0; i < n - 1; i++) {
+                let minIdx = i;
+                
+                for (let j = i + 1; j < n; j++) {
+                    updateVisualization([minIdx, j]);
+                    updateStatus(`최솟값 찾는 중: 현재 최소 = ${array[minIdx]}`);
+                    await delay();
+                    
+                    if (array[j] < array[minIdx]) {
+                        minIdx = j;
+                    }
+                }
+                
+                if (minIdx !== i) {
+                    [array[i], array[minIdx]] = [array[minIdx], array[i]];
+                    updateVisualization([], [i, minIdx]);
+                    updateArrayDisplay();
+                    updateStatus(`교환: 위치 ${i} ↔ ${minIdx}`);
+                    await delay();
+                }
+                updateVisualization([], [], Array.from({length: i + 1}, (_, k) => k));
+            }
+            updateVisualization([], [], Array.from({length: n}, (_, k) => k));
+        }
+        
+        async function quickSort(low, high) {
+            if (low < high) {
+                const pi = await partition(low, high);
+                await quickSort(low, pi - 1);
+                await quickSort(pi + 1, high);
+            }
+        }
+        
+        async function partition(low, high) {
+            const pivot = array[high];
+            updateStatus(`피벗: ${pivot}`);
+            let i = low - 1;
+            
+            for (let j = low; j < high; j++) {
+                updateVisualization([j, high]);
+                await delay();
+                
+                if (array[j] < pivot) {
+                    i++;
+                    [array[i], array[j]] = [array[j], array[i]];
+                    updateVisualization([], [i, j]);
+                    updateArrayDisplay();
+                    updateStatus(`교환: ${array[j]} < ${pivot}`);
+                    await delay();
+                }
+            }
+            
+            [array[i + 1], array[high]] = [array[high], array[i + 1]];
+            updateVisualization([], [i + 1, high]);
+            updateArrayDisplay();
+            await delay();
+            
+            return i + 1;
+        }
+        
+        async function heapSort() {
+            const n = array.length;
+            
+            for (let i = Math.floor(n / 2) - 1; i >= 0; i--) {
+                await heapify(n, i);
+            }
+            
+            for (let i = n - 1; i > 0; i--) {
+                [array[0], array[i]] = [array[i], array[0]];
+                updateVisualization([], [0, i]);
+                updateArrayDisplay();
+                updateStatus(`루트를 끝으로 이동: ${array[i]}`);
+                await delay();
+                
+                await heapify(i, 0);
+                updateVisualization([], [], Array.from({length: n - i}, (_, k) => n - 1 - k));
+            }
+            updateVisualization([], [], Array.from({length: n}, (_, k) => k));
+        }
+        
+        async function heapify(n, i) {
+            let largest = i;
+            const left = 2 * i + 1;
+            const right = 2 * i + 2;
+            
+            if (left < n && array[left] > array[largest]) {
+                largest = left;
+            }
+            
+            if (right < n && array[right] > array[largest]) {
+                largest = right;
+            }
+            
+            if (largest !== i) {
+                updateVisualization([i, largest]);
+                await delay();
+                
+                [array[i], array[largest]] = [array[largest], array[i]];
+                updateVisualization([], [i, largest]);
+                updateArrayDisplay();
+                updateStatus(`힙 조정: 위치 ${i} ↔ ${largest}`);
+                await delay();
+                
+                await heapify(n, largest);
+            }
+        }
+        
+        function generateSteps(algo) {
+            steps = [];
+            const tempArray = [...array];
+            
+            switch(algo) {
+                case 'bubble': generateBubbleSteps(tempArray); break;
+                case 'insertion': generateInsertionSteps(tempArray); break;
+                case 'selection': generateSelectionSteps(tempArray); break;
+                case 'quick': generateQuickSteps(tempArray, 0, tempArray.length - 1); break;
+                case 'heap': generateHeapSteps(tempArray); break;
+            }
+            
+            updateStatus(`총 ${steps.length}단계 생성됨`);
+        }
+        
+        function generateBubbleSteps(arr) {
+            const n = arr.length;
+            for (let i = 0; i < n - 1; i++) {
+                for (let j = 0; j < n - i - 1; j++) {
+                    steps.push({
+                        array: [...arr],
+                        comparing: [j, j + 1],
+                        description: `비교: ${arr[j]} vs ${arr[j + 1]}`
+                    });
+                    
+                    if (arr[j] > arr[j + 1]) {
+                        [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+                        steps.push({
+                            array: [...arr],
+                            swapping: [j, j + 1],
+                            description: `교환: 위치 ${j} ↔ ${j + 1}`
+                        });
+                    }
+                }
+            }
+        }
+        
+        function generateInsertionSteps(arr) {
+            const n = arr.length;
+            for (let i = 1; i < n; i++) {
+                let key = arr[i];
+                let j = i - 1;
+                
+                steps.push({
+                    array: [...arr],
+                    comparing: [i],
+                    description: `삽입할 값: ${key}`
+                });
+                
+                while (j >= 0 && arr[j] > key) {
+                    arr[j + 1] = arr[j];
+                    steps.push({
+                        array: [...arr],
+                        swapping: [j, j + 1],
+                        description: `이동: ${arr[j + 1]} → 오른쪽`
+                    });
+                    j--;
+                }
+                arr[j + 1] = key;
+            }
+        }
+        
+        function generateSelectionSteps(arr) {
+            const n = arr.length;
+            for (let i = 0; i < n - 1; i++) {
+                let minIdx = i;
+                
+                for (let j = i + 1; j < n; j++) {
+                    steps.push({
+                        array: [...arr],
+                        comparing: [minIdx, j],
+                        description: `최솟값 찾기: 현재 최소 = ${arr[minIdx]}`
+                    });
+                    
+                    if (arr[j] < arr[minIdx]) {
+                        minIdx = j;
+                    }
+                }
+                
+                if (minIdx !== i) {
+                    [arr[i], arr[minIdx]] = [arr[minIdx], arr[i]];
+                    steps.push({
+                        array: [...arr],
+                        swapping: [i, minIdx],
+                        description: `교환: 위치 ${i} ↔ ${minIdx}`
+                    });
+                }
+            }
+        }
+        
+        function generateQuickSteps(arr, low, high) {
+            if (low < high) {
+                const pi = partitionSteps(arr, low, high);
+                generateQuickSteps(arr, low, pi - 1);
+                generateQuickSteps(arr, pi + 1, high);
+            }
+        }
+        
+        function partitionSteps(arr, low, high) {
+            const pivot = arr[high];
+            let i = low - 1;
+            
+            steps.push({
+                array: [...arr],
+                comparing: [high],
+                description: `피벗: ${pivot}`
+            });
+            
+            for (let j = low; j < high; j++) {
+                if (arr[j] < pivot) {
+                    i++;
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                    steps.push({
+                        array: [...arr],
+                        swapping: [i, j],
+                        description: `교환: ${arr[i]} < ${pivot}`
+                    });
+                }
+            }
+            
+            [arr[i + 1], arr[high]] = [arr[high], arr[i + 1]];
+            steps.push({
+                array: [...arr],
+                swapping: [i + 1, high],
+                description: `피벗을 중앙으로 이동`
+            });
+            
+            return i + 1;
+        }
+        
+        function generateHeapSteps(arr) {
+            const n = arr.length;
+            
+            for (let i = Math.floor(n / 2) - 1; i >= 0; i--) {
+                heapifySteps(arr, n, i);
+            }
+            
+            for (let i = n - 1; i > 0; i--) {
+                [arr[0], arr[i]] = [arr[i], arr[0]];
+                steps.push({
+                    array: [...arr],
+                    swapping: [0, i],
+                    description: `루트를 끝으로 이동: ${arr[i]}`
+                });
+                
+                heapifySteps(arr, i, 0);
+            }
+        }
+        
+        function heapifySteps(arr, n, i) {
+            let largest = i;
+            const left = 2 * i + 1;
+            const right = 2 * i + 2;
+            
+            if (left < n && arr[left] > arr[largest]) {
+                largest = left;
+            }
+            
+            if (right < n && arr[right] > arr[largest]) {
+                largest = right;
+            }
+            
+            if (largest !== i) {
+                [arr[i], arr[largest]] = [arr[largest], arr[i]];
+                steps.push({
+                    array: [...arr],
+                    swapping: [i, largest],
+                    description: `힙 조정: 위치 ${i} ↔ ${largest}`
+                });
+                
+                heapifySteps(arr, n, largest);
+            }
+        }
+        
+        function applyStep(stepIndex) {
+            if (stepIndex < 0 || stepIndex >= steps.length) return;
+            
+            const step = steps[stepIndex];
+            array = [...step.array];
+            updateVisualization(step.comparing || [], step.swapping || []);
+            updateArrayDisplay();
+            updateStatus(`단계 ${stepIndex + 1}/${steps.length}: ${step.description}`);
+            currentStep = stepIndex;
+        }
+        
+        function stepForward() {
+            if (currentStep < steps.length - 1) {
+                applyStep(currentStep + 1);
+            } else {
+                updateStatus('마지막 단계입니다');
+            }
+        }
+        
+        function stepBackward() {
+            if (currentStep > 0) {
+                applyStep(currentStep - 1);
+            } else {
+                updateStatus('첫 단계입니다');
+            }
+        }
+        
+        function resetSteps() {
+            if (steps.length > 0) {
+                applyStep(0);
+            }
+        }
+        
+        document.getElementById('algorithmSelect').addEventListener('change', updateDescription);
+        
+        generateNewArray();
+        updateDescription();
+    </script>
+</body>
+</html>
