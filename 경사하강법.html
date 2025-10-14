@@ -306,15 +306,15 @@
                 <div class="legend">
                     <div class="legend-item">
                         <div class="legend-dot" style="background: #28a745;"></div>
-                        <span>매우 효율적 (&gt; 1.0)</span>
+                        <span>매우 효율적 (&gt; 0.14)</span>
                     </div>
                     <div class="legend-item">
                         <div class="legend-dot" style="background: #ffc107;"></div>
-                        <span>보통 (0.1-1.0)</span>
+                        <span>보통 (0.10-0.14)</span>
                     </div>
                     <div class="legend-item">
                         <div class="legend-dot" style="background: #dc3545;"></div>
-                        <span>비효율적 (&lt; 0.1)</span>
+                        <span>비효율적 (&lt; 0.10)</span>
                     </div>
                     <div class="legend-item">
                         <div class="legend-dot" style="background: #6c757d;"></div>
@@ -640,7 +640,7 @@
                     status.style.background = '#f8d7da';
                     status.style.color = '#721c24';
                     status.style.display = 'block';
-                    status.textContent = '⚠️ 발산! 학습률이 너무 큽니다. 더 작은 값(0.001~0.01)을 시도해보세요.';
+                    status.textContent = '⚠️ 발산! 학습률이 너무 큽니다. 더 작은 값을 시도해보세요.';
                     
                     const endTime = performance.now();
                     const trainTime = ((endTime - startTime) / 1000).toFixed(3);
@@ -711,8 +711,8 @@
         function getEfficiencyColor(mse, epochs, diverged) {
             if (diverged) return 'rgba(108, 117, 125, 0.8)'; // 회색
             const efficiency = 1 / (mse * epochs);
-            if (efficiency > 1) return 'rgba(40, 167, 69, 0.8)'; // 초록 - 매우 효율적
-            if (efficiency > 0.1) return 'rgba(255, 193, 7, 0.8)'; // 노랑 - 보통
+            if (efficiency > 0.14) return 'rgba(40, 167, 69, 0.8)'; // 초록 - 매우 효율적
+            if (efficiency > 0.10) return 'rgba(255, 193, 7, 0.8)'; // 노랑 - 보통
             return 'rgba(220, 53, 69, 0.8)'; // 빨강 - 비효율적
         }
         
