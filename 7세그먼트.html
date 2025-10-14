@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>레드스톤 7-Segment 체험</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            font-family: 'Arial', sans-serif;
+            padding: 20px;
+        }
+        
+        .container {
+            background: #0f3460;
+            border: 3px solid #e94560;
+            border-radius: 10px;
+            padding: 30px;
+            max-width: 630px;
+            margin: 0 auto;
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #00ff00;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px #00ff00;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .display-section {
+            background: #1a1a1a;
+            border: 4px solid #00ff00;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: inset 0 0 20px rgba(0, 255, 0, 0.1);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .seven-segment {
+            width: 100px;
+            height: 140px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        .segment {
+            position: absolute;
+            background: #333;
+            transition: background-color 0.1s;
+        }
+        
+        .segment.active {
+            background: #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+        }
+        
+        .a { width: 70px; height: 10px; top: 5px; left: 15px; }
+        .b { width: 10px; height: 55px; top: 15px; right: 15px; }
+        .c { width: 10px; height: 55px; bottom: 15px; right: 15px; }
+        .d { width: 70px; height: 10px; bottom: 5px; left: 15px; }
+        .e { width: 10px; height: 55px; bottom: 15px; left: 15px; }
+        .f { width: 10px; height: 55px; top: 15px; left: 15px; }
+        .g { width: 70px; height: 10px; top: 65px; left: 15px; }
+        
+        .info-text {
+            text-align: center;
+            margin-top: 20px;
+            color: #00ff00;
+            font-size: 14px;
+        }
+        
+        .matrix-section {
+            background: #1a1a1a;
+            border: 3px solid #ffaa00;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .matrix-title {
+            color: #ffaa00;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .matrix-container {
+            overflow-x: auto;
+            background: #0a0a0a;
+            border: 2px solid #ffaa00;
+            border-radius: 5px;
+            padding: 15px;
+            position: relative;
+        }
+        
+        .highlight-bar {
+            position: absolute;
+            top: 0;
+            width: 48px;
+            height: 100%;
+            background: rgba(0, 255, 0, 0.15);
+            border-left: 3px solid #00ff00;
+            border-right: 3px solid #00ff00;
+            box-shadow: inset 0 0 20px rgba(0, 255, 0, 0.3);
+            pointer-events: none;
+            transition: left 0.3s ease;
+            z-index: 1;
+        }
+        
+        .matrix {
+            display: grid;
+            grid-template-columns: 60px repeat(10, 35px);
+            gap: 8px;
+            min-width: 300px;
+        }
+        
+        .matrix-cell {
+            background: #333;
+            border: 2px solid #666;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: bold;
+            transition: all 0.2s;
+            color: #666;
+        }
+        
+        .matrix-cell:hover {
+            border-color: #ffaa00;
+            color: #ffaa00;
+        }
+        
+        .matrix-cell.on {
+            background: #ffaa00;
+            border-color: #ffaa00;
+            color: #000;
+            box-shadow: 0 0 10px #ffaa00;
+        }
+        
+        .matrix-header {
+            background: #2a2a2a;
+            border: 2px solid #ffaa00;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #ffaa00;
+        }
+        
+        .detection-header {
+            background: #2a2a2a;
+            border: 2px solid #ffaa00;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 3px;
+            font-size: 9px;
+            font-weight: bold;
+            color: #ffaa00;
+            width: 35px;
+            min-width: 35px;
+        }
+        
+        .boolean-section {
+            background: #1a1a1a;
+            border: 3px solid #00bfff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .boolean-title {
+            color: #00bfff;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .boolean-container {
+            background: #0a0a0a;
+            border: 2px solid #00bfff;
+            border-radius: 5px;
+            padding: 15px;
+        }
+        
+        .boolean-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        
+        .boolean-item {
+            background: #1a1a1a;
+            border: 2px solid #00bfff;
+            border-radius: 5px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .segment-label {
+            color: #00bfff;
+            font-weight: bold;
+            font-size: 14px;
+            min-width: 20px;
+        }
+        
+        .boolean-expression {
+            color: #fff;
+            font-family: monospace;
+            font-size: 12px;
+            flex: 1;
+            word-break: break-all;
+        }
+        
+        .demux-info {
+            background: #0a0a0a;
+            border: 2px solid #00ff00;
+            border-radius: 5px;
+            padding: 15px;
+            font-size: 12px;
+            color: #00ff00;
+            font-family: monospace;
+            margin-top: 30px;
+        }
+        
+        .demux-info div {
+            margin: 8px 0;
+        }
+        
+        .demux-status {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .bit-display {
+            background: #1a1a1a;
+            border: 2px solid #ff6b35;
+            border-radius: 5px;
+            padding: 12px;
+            text-align: center;
+            color: #ff6b35;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
+        .bit-display.on {
+            background: #ff6b35;
+            color: #000;
+            box-shadow: 0 0 10px #ff6b35;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>7-Segment로 0부터 9까지 표기하기</h1>
+        
+        <div class="display-section">
+            <div class="seven-segment">
+                <div class="segment a"></div>
+                <div class="segment b"></div>
+                <div class="segment c"></div>
+                <div class="segment d"></div>
+                <div class="segment e"></div>
+                <div class="segment f"></div>
+                <div class="segment g"></div>
+            </div>
+            <div class="info-text">
+                현재 이진수 : <span id="currentNum" style="color: #ffff00; font-size: 18px;">D0</span>
+            </div>
+        </div>
+        
+        <div class="boolean-section">
+            <div class="boolean-title">부울식 결과</div>
+            <div class="boolean-container">
+                <div class="boolean-display" id="booleanDisplay">
+                    <div class="boolean-item">
+                        <span class="segment-label">A:</span>
+                        <span class="boolean-expression" id="exprA">0</span>
+                    </div>
+                    <div class="boolean-item">
+                        <span class="segment-label">B:</span>
+                        <span class="boolean-expression" id="exprB">0</span>
+                    </div>
+                    <div class="boolean-item">
+                        <span class="segment-label">C:</span>
+                        <span class="boolean-expression" id="exprC">0</span>
+                    </div>
+                    <div class="boolean-item">
+                        <span class="segment-label">D:</span>
+                        <span class="boolean-expression" id="exprD">0</span>
+                    </div>
+                    <div class="boolean-item">
+                        <span class="segment-label">E:</span>
+                        <span class="boolean-expression" id="exprE">0</span>
+                    </div>
+                    <div class="boolean-item">
+                        <span class="segment-label">F:</span>
+                        <span class="boolean-expression" id="exprF">0</span>
+                    </div>
+                    <div class="boolean-item">
+                        <span class="segment-label">G:</span>
+                        <span class="boolean-expression" id="exprG">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="matrix-section">
+            <div class="matrix-title">매트릭스 제어</div>
+            <div class="matrix-container">
+                <div class="highlight-bar" id="highlightBar"></div>
+                <div class="matrix" id="segmentMatrix" style="position: relative; z-index: 2;">
+                    <!-- 매트릭스가 여기 생성됨 -->
+                </div>
+            </div>
+        </div>
+    
+    </div>
+    
+    <script>
+        // 7x10 매트릭스 (7개 세그먼트 × 10개 Detection)
+        const segmentMatrix = {
+            a: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            b: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            c: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            d: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            e: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            f: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            g: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        };
+        
+        const segmentNames = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
+        
+        // 매트릭스 초기화
+        function initMatrix() {
+            const matrixDiv = document.getElementById('segmentMatrix');
+            
+            // 헤더
+            const header = document.createElement('div');
+            header.className = 'matrix-header';
+            header.textContent = 'SEG';
+            matrixDiv.appendChild(header);
+            
+            for (let d = 0; d < 10; d++) {
+                const headerCell = document.createElement('div');
+                headerCell.className = 'detection-header';
+                headerCell.textContent = d.toString(2).padStart(4, '0');
+                matrixDiv.appendChild(headerCell);
+            }
+            
+            // 세그먼트 행
+            segmentNames.forEach(seg => {
+                const label = document.createElement('div');
+                label.className = 'matrix-header';
+                label.textContent = seg.toUpperCase();
+                matrixDiv.appendChild(label);
+                
+                for (let d = 0; d < 10; d++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'matrix-cell';
+                    cell.id = `cell-${seg}-${d}`;
+                    cell.textContent = seg.toUpperCase();
+                    cell.onclick = () => toggleCell(seg, d);
+                    matrixDiv.appendChild(cell);
+                }
+            });
+            
+            updateMatrixDisplay();
+        }
+        
+        function toggleCell(segment, detection) {
+            segmentMatrix[segment][detection] = 1 - segmentMatrix[segment][detection];
+            updateMatrixDisplay();
+            updateBooleanExpressions();
+        }
+        
+        // 부울식 간소화 함수
+        function simplifyBooleanExpression(values) {
+            // 1인 값들의 인덱스를 찾기
+            const minterms = [];
+            for (let i = 0; i < values.length; i++) {
+                if (values[i] === 1) {
+                    minterms.push(i);
+                }
+            }
+            
+            if (minterms.length === 0) return "0";
+            if (minterms.length === 10) return "1";
+            
+            // 각 minterm을 ABCD 형태로 변환
+            const terms = minterms.map(m => {
+                const binary = m.toString(2).padStart(4, '0');
+                const parts = [];
+                for (let i = 0; i < 4; i++) {
+                    const bit = binary[i];
+                    const varName = String.fromCharCode(65 + i); // A, B, C, D
+                    if (bit === '0') {
+                        parts.push(varName + "'");
+                    } else {
+                        parts.push(varName);
+                    }
+                }
+                return parts.join('');
+            });
+            
+            return terms.join(' + ');
+        }
+        
+        function updateBooleanExpressions() {
+            segmentNames.forEach(seg => {
+                const expression = simplifyBooleanExpression(segmentMatrix[seg]);
+                document.getElementById(`expr${seg.toUpperCase()}`).textContent = expression;
+            });
+        }
+        
+        function updateMatrixDisplay() {
+            segmentNames.forEach(seg => {
+                for (let d = 0; d < 10; d++) {
+                    const cell = document.getElementById(`cell-${seg}-${d}`);
+                    if (segmentMatrix[seg][d] === 1) {
+                        cell.classList.add('on');
+                    } else {
+                        cell.classList.remove('on');
+                    }
+                }
+            });
+        }
+        
+        function updateDemuxStatus(detectionIdx) {
+            document.getElementById('currentNum').textContent = detectionIdx.toString(2).padStart(4, '0');
+            
+            // 하이라이트 바 위치 업데이트
+            // matrix는 grid-template-columns: 60px repeat(10, 35px)이고 gap: 8px
+            // 첫 번째 컬럼(60px) + 간격(8px) + (detectionIdx * (35px + 8px))
+            const firstColumnWidth = 60;
+            const gap = 8;
+            const detectionColumnWidth = 35;
+            
+            const barPosition = 15 + firstColumnWidth + gap + (detectionIdx * (detectionColumnWidth + gap));
+            const highlightBar = document.getElementById('highlightBar');
+            highlightBar.style.left = barPosition + 'px';
+            highlightBar.style.width = detectionColumnWidth + 'px';
+            
+        }
+        
+        function updateDisplayForDetection(detectionIdx) {
+            // 세그먼트를 클래스명으로 직접 찾아서 업데이트
+            segmentNames.forEach(segmentName => {
+                const segment = document.querySelector(`.segment.${segmentName}`);
+                if (segmentMatrix[segmentName][detectionIdx] === 1) {
+                    segment.classList.add('active');
+                } else {
+                    segment.classList.remove('active');
+                }
+            });
+        }
+        
+        // 초기화 및 자동 순환
+        initMatrix();
+        updateBooleanExpressions();
+        
+        let idx = 0;
+        setInterval(() => {
+            updateDemuxStatus(idx);
+            updateDisplayForDetection(idx);
+            idx = (idx + 1) % 10;
+        }, 800);
+    </script>
+</body>
+</html>
