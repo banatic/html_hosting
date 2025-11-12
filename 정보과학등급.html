@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>정보과학 성적 계산기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 0;
+            padding: 50px 40px;
+            box-shadow: none;
+            max-width: 520px;
+            width: 100%;
+            border: 1px solid #e0e0e0;
+        }
+        
+        h1 {
+            color: #000;
+            text-align: left;
+            margin-bottom: 40px;
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        .info-box {
+            background: #fafafa;
+            border-left: none;
+            padding: 20px;
+            margin-bottom: 40px;
+            border-radius: 0;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .info-box p {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.8;
+            margin-bottom: 5px;
+            font-weight: 400;
+        }
+        
+        .input-group {
+            margin-bottom: 24px;
+        }
+        
+        label {
+            display: block;
+            color: #000;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 14px;
+            letter-spacing: -0.2px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #d0d0d0;
+            border-radius: 0;
+            font-size: 16px;
+            transition: border-color 0.2s;
+            background: white;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #000;
+            box-shadow: none;
+        }
+        
+        button {
+            width: 100%;
+            padding: 16px;
+            background: #000;
+            color: white;
+            border: none;
+            border-radius: 0;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 16px;
+            letter-spacing: 0.3px;
+        }
+        
+        button:hover {
+            background: #333;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        button:active {
+            background: #1a1a1a;
+        }
+        
+        .result {
+            margin-top: 40px;
+            padding: 0;
+            background: transparent;
+            border-radius: 0;
+            display: none;
+        }
+        
+        .result.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        .grade-item {
+            padding: 20px;
+            margin-bottom: 16px;
+            border-radius: 0;
+            border-left: none;
+            border: 1px solid;
+        }
+        
+        .grade-a {
+            background: #fff;
+            border-color: #4caf50;
+        }
+        
+        .grade-b {
+            background: #fff;
+            border-color: #ff9800;
+        }
+        
+        .grade-c {
+            background: #fff;
+            border-color: #f44336;
+        }
+        
+        .grade-item h3 {
+            margin-bottom: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+        
+        .grade-a h3 { color: #4caf50; }
+        .grade-b h3 { color: #ff9800; }
+        .grade-c h3 { color: #f44336; }
+        
+        .grade-item p {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+            font-weight: 400;
+        }
+        
+        .current-score {
+            text-align: center;
+            padding: 20px;
+            background: #fafafa;
+            border-radius: 0;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #666;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .current-score strong {
+            color: #000;
+            font-size: 24px;
+            font-weight: 700;
+            display: block;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>정보과학 성적 계산기</h1>
+        
+        <div class="info-box">
+            <p>📌 <strong>배점 안내</strong></p>
+            <p>• 수행평가 1: 30%</p>
+            <p>• 수행평가 2: 30%</p>
+            <p>• 기말고사: 40%</p>
+            <p>• A등급: 80점 이상 | B등급: 60점 이상 | C등급: 60점 미만</p>
+        </div>
+        
+        <div class="input-group">
+            <label for="score1">수행평가 1 점수 (100점 만점)</label>
+            <input type="number" id="score1" min="0" max="100" placeholder="예: 85">
+        </div>
+        
+        <div class="input-group">
+            <label for="score2">수행평가 2 점수 (100점 만점)</label>
+            <input type="number" id="score2" min="0" max="100" placeholder="예: 90">
+        </div>
+        
+        <button onclick="calculate()">계산하기</button>
+        
+        <div class="result" id="result"></div>
+    </div>
+    
+    <script>
+        function calculate() {
+            const score1 = parseFloat(document.getElementById('score1').value);
+            const score2 = parseFloat(document.getElementById('score2').value);
+            
+            if (isNaN(score1) || isNaN(score2)) {
+                alert('수행평가 점수를 모두 입력해주세요!');
+                return;
+            }
+            
+            if (score1 < 0 || score1 > 100 || score2 < 0 || score2 > 100) {
+                alert('점수는 0점에서 100점 사이여야 합니다!');
+                return;
+            }
+            
+            // 현재까지의 점수 (수행평가 1: 30%, 수행평가 2: 30%)
+            const currentScore = (score1 * 0.3) + (score2 * 0.3);
+            
+            // A등급(80점)을 받기 위한 기말고사 최소 점수
+            const neededForA = (80 - currentScore) / 0.4;
+            
+            // B등급(60점)을 받기 위한 기말고사 최소 점수
+            const neededForB = (60 - currentScore) / 0.4;
+            
+            let resultHTML = `
+                <div class="current-score">
+                    현재까지의 점수: <strong>${currentScore.toFixed(1)}점</strong> (수행평가 60% 반영)
+                </div>
+            `;
+            
+            // A등급
+            if (neededForA <= 0) {
+                resultHTML += `
+                    <div class="grade-item grade-a">
+                        <h3>🎉 A등급 확정!</h3>
+                        <p>이미 A등급이 확정되었습니다! 기말고사 점수와 관계없이 A등급을 받게 됩니다.</p>
+                    </div>
+                `;
+            } else if (neededForA <= 100) {
+                resultHTML += `
+                    <div class="grade-item grade-a">
+                        <h3>✨ A등급 조건</h3>
+                        <p>기말고사에서 <strong>${Math.ceil(neededForA)}점</strong> 이상을 받으면 A등급을 획득할 수 있습니다.</p>
+                    </div>
+                `;
+            } else {
+                resultHTML += `
+                    <div class="grade-item grade-a">
+                        <h3>❌ A등급 불가능</h3>
+                        <p>기말고사 만점을 받아도 A등급에 도달할 수 없습니다. (필요점수: ${neededForA.toFixed(1)}점)</p>
+                    </div>
+                `;
+            }
+            
+            // B등급
+            if (neededForB <= 0) {
+                resultHTML += `
+                    <div class="grade-item grade-b">
+                        <h3>✅ B등급 확정!</h3>
+                        <p>이미 B등급 이상이 확정되었습니다! 기말고사 점수와 관계없이 최소 B등급을 받게 됩니다.</p>
+                    </div>
+                `;
+            } else if (neededForB <= 100) {
+                resultHTML += `
+                    <div class="grade-item grade-b">
+                        <h3>📝 B등급 조건</h3>
+                        <p>기말고사에서 <strong>${Math.ceil(neededForB)}점</strong> 이상을 받으면 B등급을 획득할 수 있습니다.</p>
+                    </div>
+                `;
+            } else {
+                resultHTML += `
+                    <div class="grade-item grade-b">
+                        <h3>❌ B등급 불가능</h3>
+                        <p>기말고사 만점을 받아도 B등급에 도달할 수 없습니다. (필요점수: ${neededForB.toFixed(1)}점)</p>
+                    </div>
+                `;
+            }
+            
+            // C등급
+            if (neededForB > 100) {
+                resultHTML += `
+                    <div class="grade-item grade-c">
+                        <h3>현재 예상 등급: C</h3>
+                        <p>기말고사 성적에 따라 C등급을 받게 됩니다.</p>
+                    </div>
+                `;
+            }
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = resultHTML;
+            resultDiv.classList.add('show');
+        }
+        
+        // Enter 키로 계산하기
+        document.getElementById('score1').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') calculate();
+        });
+        document.getElementById('score2').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') calculate();
+        });
+    </script>
+</body>
+</html>
