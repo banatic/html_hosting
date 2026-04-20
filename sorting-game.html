@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔢 버블정렬 배틀!</title>
+  <style>
+    :root {
+      --bg: #0f0f23;
+      --card-w: 62px;
+      --card-h: 62px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: var(--bg);
+      color: #e2e8f0;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── SCREENS ── */
+    .screen { display: none; min-height: 100vh; }
+    .screen.active { display: flex; flex-direction: column; }
+
+    /* ── START SCREEN ── */
+    #startScreen {
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem 1rem;
+      background: radial-gradient(ellipse at 50% 30%, #1a1a4e 0%, #0f0f23 70%);
+    }
+    .logo { font-size: 3rem; font-weight: 900; margin-bottom: .4rem;
+      background: linear-gradient(135deg,#4cc9f0,#4ade80);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .tagline { color: #94a3b8; margin-bottom: 2rem; font-size: 1.05rem; }
+
+    .how-to {
+      background: #1e293b; border-radius: 14px;
+      padding: 1.2rem 1.6rem; margin-bottom: 1.8rem;
+      text-align: left; max-width: 480px;
+    }
+    .how-to h3 { color: #4cc9f0; margin-bottom: .8rem; font-size: .95rem; }
+    .how-to li { list-style: none; color: #cbd5e1; font-size: .88rem;
+      padding: .25rem 0 .25rem 1.4rem; position: relative; }
+    .how-to li::before { content: '▸'; position: absolute; left: 0; color: #4ade80; }
+
+    .level-grid { display: flex; gap: .8rem; flex-wrap: wrap;
+      justify-content: center; margin-bottom: 1.6rem; }
+    .lv-card {
+      background: #1e293b; border: 2px solid #334155;
+      border-radius: 12px; padding: .9rem 1.2rem;
+      cursor: pointer; transition: all .2s; min-width: 110px; text-align: center;
+    }
+    .lv-card:hover, .lv-card.sel {
+      border-color: #4cc9f0; background: #1e3a5f; transform: translateY(-2px);
+    }
+    .lv-card .lv-name { font-size: 1rem; font-weight: 700; color: #4cc9f0; }
+    .lv-card .lv-meta { font-size: .75rem; color: #94a3b8; margin-top: .3rem; line-height: 1.4; }
+
+    .start-btn {
+      background: linear-gradient(135deg,#4cc9f0,#4361ee);
+      border: none; border-radius: 50px; color: #fff;
+      font-size: 1.2rem; font-weight: 700; padding: .9rem 2.8rem;
+      cursor: pointer; transition: all .2s;
+      box-shadow: 0 4px 20px rgba(76,201,240,.4);
+    }
+    .start-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(76,201,240,.6); }
+
+    /* ── GAME SCREEN ── */
+    #gameScreen { flex-direction: column; }
+
+    .g-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: .7rem 1.4rem; background: #07071a;
+      border-bottom: 1px solid #1e293b; flex-shrink: 0;
+    }
+    .lv-badge {
+      background: #4cc9f0; color: #07071a;
+      padding: .25rem .9rem; border-radius: 20px; font-weight: 700; font-size: .88rem;
+    }
+    .g-timer {
+      font-size: 1.5rem; font-weight: 700; font-family: monospace; color: #fbbf24;
+    }
+    .spd-label { font-size: .82rem; color: #64748b; }
+
+    /* Sections */
+    .gsec {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 1.2rem 1rem;
+    }
+    .comp-sec { background: linear-gradient(180deg,#0c1929 0%,#13243d 100%);
+      border-bottom: 2px solid #1e3a5f; }
+    .stud-sec { background: linear-gradient(180deg,#0e1f0e 0%,#0d2618 100%); }
+
+    .sec-head {
+      display: flex; align-items: center; gap: .6rem; margin-bottom: .7rem; flex-wrap: wrap;
+      justify-content: center;
+    }
+    .sec-title { font-size: 1rem; font-weight: 700; }
+    .comp-sec .sec-title { color: #4cc9f0; }
+    .stud-sec .sec-title { color: #4ade80; }
+
+    .badge-done {
+      display: none; padding: .2rem .7rem; border-radius: 14px;
+      font-size: .8rem; font-weight: 700;
+    }
+    .badge-done.comp-win { background: #f87171; color: #0f0f23; }
+    .badge-done.stud-win { background: #4ade80; color: #0f0f23; }
+
+    .swap-ctr { font-size: .82rem; color: #94a3b8; display: flex; align-items: center; gap: .4rem; }
+    .swap-val { background: #1e293b; padding: .15rem .5rem;
+      border-radius: 10px; font-weight: 700; color: #fbbf24; }
+
+    .sec-status { font-size: .82rem; color: #64748b; min-height: 1.1rem; margin-bottom: .4rem; }
+
+    /* Cards row */
+    .cards-row {
+      display: flex; gap: .5rem; flex-wrap: wrap;
+      justify-content: center; margin: .5rem 0;
+    }
+
+    /* Individual card */
+    .nc {
+      width: var(--card-w); height: var(--card-h);
+      border-radius: 12px; display: flex; align-items: center; justify-content: center;
+      font-size: 1.35rem; font-weight: 700;
+      border: 2px solid transparent;
+      transition: transform .15s, box-shadow .15s, background .2s;
+      position: relative; user-select: none;
+    }
+    /* Computer card themes */
+    .nc.c-idle   { background: #1e3a5f; color: #93c5fd; }
+    .nc.c-cmp    {
+      background: #7c5c10; color: #fbbf24; border-color: #fbbf24;
+      transform: translateY(-6px) scale(1.12);
+      box-shadow: 0 8px 20px rgba(251,191,36,.45);
+      animation: pulse .35s ease;
+    }
+    .nc.c-swp    {
+      background: #7f1d1d; color: #fca5a5; border-color: #f87171;
+      transform: translateY(-4px);
+      box-shadow: 0 6px 16px rgba(248,113,113,.45);
+    }
+    .nc.c-done   { background: #14532d; color: #4ade80; border-color: #22c55e; }
+
+    /* Student card themes */
+    .nc.s-idle   { background: #1a3a1a; color: #86efac; cursor: grab; }
+    .nc.s-idle:hover { transform: translateY(-4px);
+      box-shadow: 0 6px 14px rgba(74,222,128,.3); border-color: #4ade80; }
+    .nc.s-sel    {
+      background: #164e63; color: #67e8f9; border-color: #22d3ee;
+      transform: translateY(-7px) scale(1.12);
+      box-shadow: 0 8px 22px rgba(34,211,238,.5);
+    }
+    .nc.s-over   { border-color: #fbbf24 !important; transform: scale(1.06); }
+    .nc.s-done   { background: #1e3a5f; color: #60a5fa; cursor: default; }
+
+    @keyframes pulse {
+      0%,100% { transform: translateY(-6px) scale(1.12); }
+      50%      { transform: translateY(-10px) scale(1.18); }
+    }
+    @keyframes celebrate {
+      0%,100% { transform: scale(1); }
+      30%  { transform: scale(1.25) rotate(6deg); }
+      70%  { transform: scale(1.25) rotate(-6deg); }
+    }
+    .nc.celeb { animation: celebrate .65s ease; }
+
+    /* Progress bar */
+    .pbar {
+      width: 100%; max-width: 420px; height: 5px;
+      background: #1e293b; border-radius: 3px; overflow: hidden; margin-top: .4rem;
+    }
+    .pfill { height: 100%; border-radius: 3px; transition: width .3s; }
+    .comp-sec .pfill { background: #4cc9f0; }
+    .stud-sec .pfill { background: #4ade80; }
+
+    .hint { font-size: .72rem; color: #475569; margin-top: .3rem; }
+
+    /* ── RESULTS SCREEN ── */
+    #resultsScreen {
+      align-items: center; justify-content: center;
+      text-align: center; padding: 2rem 1rem;
+      background: radial-gradient(ellipse at 50% 30%,#1a1a4e 0%,#0f0f23 70%);
+    }
+    .res-title { font-size: 2.3rem; font-weight: 900; margin-bottom: .5rem; }
+    .res-stars { font-size: 2rem; margin-bottom: .5rem; }
+    .res-msg   { color: #94a3b8; font-size: .95rem; margin-bottom: 1.5rem; }
+
+    .res-cards { display: flex; gap: 1rem; flex-wrap: wrap;
+      justify-content: center; margin-bottom: 1.8rem; }
+    .rc { background: #1e293b; border-radius: 14px; padding: 1.2rem 1.4rem; min-width: 130px; }
+    .rc h3 { font-size: .78rem; color: #64748b; margin-bottom: .4rem; }
+    .rc .val { font-size: 1.7rem; font-weight: 700; }
+    .rc.blue .val  { color: #4cc9f0; }
+    .rc.green .val { color: #4ade80; }
+    .rc.gold .val  { color: #fbbf24; }
+
+    .res-final { margin-top: 1.2rem; }
+    .res-final p { font-size: .78rem; color: #475569; margin-bottom: .5rem; }
+    .res-arr { display: flex; gap: .4rem; justify-content: center; flex-wrap: wrap; }
+
+    .res-actions { display: flex; gap: .8rem; flex-wrap: wrap; justify-content: center; }
+    .btn {
+      border: none; border-radius: 50px; color: #fff;
+      font-size: .95rem; font-weight: 700; padding: .75rem 1.8rem;
+      cursor: pointer; transition: all .2s;
+    }
+    .btn:hover { transform: translateY(-2px); opacity: .88; }
+    .btn-next   { background: linear-gradient(135deg,#4ade80,#16a34a);
+      box-shadow: 0 4px 14px rgba(74,222,128,.4); }
+    .btn-retry  { background: linear-gradient(135deg,#fbbf24,#d97706);
+      box-shadow: 0 4px 14px rgba(251,191,36,.4); }
+    .btn-home   { background: #334155; }
+
+    /* Confetti */
+    #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 999; overflow: hidden; }
+    .cp {
+      position: absolute; opacity: 0;
+      animation: fall linear forwards;
+    }
+    @keyframes fall {
+      0%   { transform: translateY(-20px) rotate(0); opacity: 1; }
+      100% { transform: translateY(105vh) rotate(720deg); opacity: 0; }
+    }
+
+    .divider { height: 2px;
+      background: linear-gradient(90deg,transparent,#334155,transparent); flex-shrink: 0; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════ START SCREEN ══════════════ -->
+<div id="startScreen" class="screen active">
+  <div class="logo">🔢 버블정렬 배틀!</div>
+  <div class="tagline">컴퓨터보다 빠르게 숫자를 정렬할 수 있을까요?</div>
+
+  <div class="how-to">
+    <h3>📖 게임 방법</h3>
+    <ul>
+      <li>화면 위쪽에서 컴퓨터가 <b>버블정렬</b>로 숫자를 정렬합니다</li>
+      <li>아래쪽에서 카드를 <b>드래그</b>하거나 <b>클릭 두 번</b>으로 위치를 바꾸세요</li>
+      <li>컴퓨터보다 먼저 오름차순으로 정렬하면 승리!</li>
+      <li>레벨이 올라갈수록 컴퓨터가 점점 빨라집니다 🚀</li>
+    </ul>
+  </div>
+
+  <div style="font-size:.85rem;color:#64748b;margin-bottom:.8rem;">시작 레벨 선택</div>
+  <div class="level-grid" id="lvGrid"></div>
+  <button class="start-btn" onclick="startGame()">🚀 게임 시작!</button>
+</div>
+
+<!-- ══════════════ GAME SCREEN ══════════════ -->
+<div id="gameScreen" class="screen">
+  <div class="g-header">
+    <span class="lv-badge" id="gLvBadge">레벨 1</span>
+    <span class="g-timer"  id="gTimer">0:00.0</span>
+    <span class="spd-label" id="gSpd">컴퓨터: 매우 느림</span>
+  </div>
+
+  <!-- Computer section -->
+  <div class="gsec comp-sec" id="compSec">
+    <div class="sec-head">
+      <span>💻</span>
+      <span class="sec-title">컴퓨터 (버블정렬)</span>
+      <span class="badge-done comp-win" id="compBadge">완료!</span>
+    </div>
+    <div class="cards-row" id="compRow"></div>
+    <div class="sec-status" id="compStat">준비 중...</div>
+    <div class="pbar"><div class="pfill" id="compBar" style="width:0%"></div></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Student section -->
+  <div class="gsec stud-sec" id="studSec">
+    <div class="sec-head">
+      <span>🎮</span>
+      <span class="sec-title">내 정렬</span>
+      <div class="swap-ctr">교환: <span class="swap-val" id="swapVal">0</span>회</div>
+      <span class="badge-done stud-win" id="studBadge">완료!</span>
+    </div>
+    <div class="cards-row" id="studRow"></div>
+    <div class="sec-status" id="studStat">카드를 드래그하거나 클릭 두 번으로 위치를 바꾸세요! (오름차순 정렬)</div>
+    <div class="hint">💡 카드를 클릭하면 선택, 다른 카드를 클릭하면 교환 | 드래그 앤 드롭도 가능</div>
+    <div class="pbar"><div class="pfill" id="studBar" style="width:0%"></div></div>
+  </div>
+</div>
+
+<!-- ══════════════ RESULTS SCREEN ══════════════ -->
+<div id="resultsScreen" class="screen">
+  <div class="res-title" id="resTitle">결과</div>
+  <div class="res-stars" id="resStars">⭐</div>
+  <div class="res-msg"   id="resMsg"></div>
+
+  <div class="res-cards">
+    <div class="rc blue">
+      <h3>💻 컴퓨터 완료 시간</h3>
+      <div class="val" id="rcComp">-</div>
+    </div>
+    <div class="rc green">
+      <h3>🎮 내 완료 시간</h3>
+      <div class="val" id="rcMe">-</div>
+    </div>
+    <div class="rc gold">
+      <h3>🔄 내 교환 횟수</h3>
+      <div class="val" id="rcSwaps">0</div>
+    </div>
+  </div>
+
+  <div class="res-actions">
+    <button class="btn btn-next"  id="btnNext"  onclick="nextLevel()">다음 레벨 ▶</button>
+    <button class="btn btn-retry" onclick="retryLevel()">🔄 다시 도전</button>
+    <button class="btn btn-home"  onclick="goHome()">🏠 처음으로</button>
+  </div>
+
+  <div class="res-final">
+    <p>정렬된 배열</p>
+    <div class="res-arr" id="resArr"></div>
+  </div>
+</div>
+
+<!-- Confetti -->
+<div id="confetti"></div>
+
+<script>
+'use strict';
+
+/* ════════════════════════════════
+   LEVEL DEFINITIONS
+════════════════════════════════ */
+const LEVELS = [
+  { name:'레벨 1 ⭐',     size:6,  delay:1300, spd:'매우 느림' },
+  { name:'레벨 2 ⭐⭐',   size:8,  delay:900,  spd:'느림' },
+  { name:'레벨 3 ⭐⭐⭐', size:8,  delay:560,  spd:'보통' },
+  { name:'레벨 4 🔥',     size:10, delay:320,  spd:'빠름' },
+  { name:'레벨 5 💀',     size:12, delay:130,  spd:'초고속' },
+];
+
+/* ════════════════════════════════
+   STATE
+════════════════════════════════ */
+let lvIdx = 0;
+let compArr = [], studArr = [];
+let compI = 0, compJ = 0, compSortedFrom = 0;
+let compHL = [], compSwp = [], compStep = 0, compTotalSteps = 0;
+let compDone = false, studDone = false, gameEnded = false, gameActive = false;
+let compFinMs = null, studFinMs = null;
+let studSwaps = 0, selIdx = -1, dragSrc = -1;
+let startMs = 0, timerID = null, compTID = null;
+
+/* ════════════════════════════════
+   HELPERS
+════════════════════════════════ */
+function isSorted(a) {
+  for (let i = 0; i < a.length - 1; i++) if (a[i] > a[i+1]) return false;
+  return true;
+}
+
+function shuffle(a) {
+  const b = [...a];
+  do {
+    for (let i = b.length-1; i > 0; i--) {
+      const j = Math.floor(Math.random()*(i+1));
+      [b[i],b[j]] = [b[j],b[i]];
+    }
+  } while (isSorted(b));
+  return b;
+}
+
+function totalSteps(n) {
+  let s = 0;
+  for (let i = 0; i < n-1; i++) s += n-i-1;
+  return s;
+}
+
+function sortedTailCount(a) {
+  let c = 0;
+  for (let i = a.length-1; i >= 0; i--) {
+    if (a[i] === i+1) c++;
+    else break;
+  }
+  return c;
+}
+
+function elapsed() { return Date.now() - startMs; }
+function fmtTime(ms) {
+  const s = ms / 1000;
+  return s.toFixed(1) + '초';
+}
+
+/* ════════════════════════════════
+   RENDER – COMPUTER
+════════════════════════════════ */
+function renderComp() {
+  const row = document.getElementById('compRow');
+  row.innerHTML = '';
+  const n = compArr.length;
+  const sortedStart = n - compSortedFrom;
+
+  compArr.forEach((v, i) => {
+    const d = document.createElement('div');
+    d.className = 'nc';
+    d.textContent = v;
+
+    if (i >= sortedStart)          d.classList.add('c-done');
+    else if (compSwp.includes(i))  d.classList.add('c-swp');
+    else if (compHL.includes(i))   d.classList.add('c-cmp');
+    else                           d.classList.add('c-idle');
+
+    row.appendChild(d);
+  });
+
+  const pct = compTotalSteps > 0 ? Math.round((compStep / compTotalSteps) * 100) : 0;
+  document.getElementById('compBar').style.width = pct + '%';
+}
+
+/* ════════════════════════════════
+   RENDER – STUDENT
+════════════════════════════════ */
+function renderStud() {
+  const row = document.getElementById('studRow');
+  row.innerHTML = '';
+  document.getElementById('swapVal').textContent = studSwaps;
+
+  studArr.forEach((v, i) => {
+    const d = document.createElement('div');
+    d.className = 'nc';
+    d.textContent = v;
+
+    if (studDone)         d.classList.add('s-done');
+    else if (i === selIdx) d.classList.add('s-sel');
+    else                  d.classList.add('s-idle');
+
+    if (!studDone) {
+      // Click-to-swap
+      d.addEventListener('click', () => handleClick(i));
+
+      // Drag
+      d.draggable = true;
+      d.addEventListener('dragstart', e => {
+        dragSrc = i;
+        d.style.opacity = '.45';
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      d.addEventListener('dragend', () => {
+        d.style.opacity = '1';
+        dragSrc = -1;
+        renderStud();
+      });
+      d.addEventListener('dragover', e => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        d.classList.add('s-over');
+      });
+      d.addEventListener('dragleave', () => d.classList.remove('s-over'));
+      d.addEventListener('drop', e => {
+        e.preventDefault();
+        if (dragSrc !== -1 && dragSrc !== i) doSwap(dragSrc, i);
+        dragSrc = -1;
+      });
+    }
+
+    row.appendChild(d);
+  });
+
+  const sorted = sortedTailCount(studArr);
+  document.getElementById('studBar').style.width =
+    Math.round((sorted / studArr.length) * 100) + '%';
+}
+
+/* ════════════════════════════════
+   STUDENT INTERACTION
+════════════════════════════════ */
+function handleClick(i) {
+  if (!gameActive || studDone) return;
+  if (selIdx === -1)    { selIdx = i; renderStud(); }
+  else if (selIdx === i){ selIdx = -1; renderStud(); }
+  else                  { doSwap(selIdx, i); selIdx = -1; }
+}
+
+function doSwap(a, b) {
+  [studArr[a], studArr[b]] = [studArr[b], studArr[a]];
+  studSwaps++;
+  selIdx = -1;
+  renderStud();
+  checkStudWin();
+}
+
+function checkStudWin() {
+  if (!isSorted(studArr)) return;
+  studDone = true;
+  studFinMs = elapsed();
+  document.getElementById('studBadge').style.display = 'inline-block';
+  document.getElementById('studStat').textContent = '🎉 정렬 완료!';
+
+  // Celebrate animation
+  const cards = document.querySelectorAll('#studRow .nc');
+  cards.forEach((c, i) => setTimeout(() => {
+    c.classList.remove('s-idle','s-sel');
+    c.classList.add('s-done','celeb');
+  }, i * 70));
+
+  if (!gameEnded) {
+    gameEnded = true;
+    setTimeout(() => endGame(), 1400);
+  }
+}
+
+/* ════════════════════════════════
+   COMPUTER BUBBLE SORT ANIMATION
+════════════════════════════════ */
+function runComp() {
+  const delay = LEVELS[lvIdx].delay;
+  const n = compArr.length;
+
+  function step() {
+    if (!gameActive) return;
+
+    // Outer loop done → all sorted
+    if (compI >= n - 1) {
+      compHL = []; compSwp = []; compSortedFrom = n;
+      compDone = true; compFinMs = elapsed();
+      renderComp();
+      document.getElementById('compBadge').style.display = 'inline-block';
+      document.getElementById('compStat').textContent =
+        `✅ 정렬 완료! (${fmtTime(compFinMs)})`;
+      if (!gameEnded) { gameEnded = true; setTimeout(endGame, 1400); }
+      return;
+    }
+
+    // Inner loop exhausted → increment outer
+    if (compJ >= n - compI - 1) {
+      compSortedFrom++;
+      compI++; compJ = 0;
+      compHL = []; compSwp = [];
+      renderComp();
+      document.getElementById('compStat').textContent = `🔁 ${compI}번째 패스 시작`;
+      compTID = setTimeout(step, delay * .4);
+      return;
+    }
+
+    // Compare phase
+    compHL = [compJ, compJ+1];
+    compSwp = [];
+    compStep++;
+    renderComp();
+
+    if (compArr[compJ] > compArr[compJ+1]) {
+      document.getElementById('compStat').textContent =
+        `🔍 ${compArr[compJ]} > ${compArr[compJ+1]} → 교환!`;
+      compTID = setTimeout(() => {
+        if (!gameActive) return;
+        [compArr[compJ], compArr[compJ+1]] = [compArr[compJ+1], compArr[compJ]];
+        compSwp = [compJ, compJ+1]; compHL = [];
+        renderComp();
+        document.getElementById('compStat').textContent =
+          `🔄 교환 완료 (${compArr[compJ]} ↔ ${compArr[compJ+1]})`;
+        compJ++;
+        compTID = setTimeout(step, delay * .5);
+      }, delay * .5);
+    } else {
+      document.getElementById('compStat').textContent =
+        `✓ ${compArr[compJ]} ≤ ${compArr[compJ+1]} → 유지`;
+      compJ++;
+      compTID = setTimeout(step, delay);
+    }
+  }
+
+  compTID = setTimeout(step, delay * .5);
+}
+
+/* ════════════════════════════════
+   TIMER
+════════════════════════════════ */
+function startTimer() {
+  startMs = Date.now();
+  timerID = setInterval(() => {
+    const e = elapsed();
+    const s = Math.floor(e / 1000);
+    const t = Math.floor((e % 1000) / 100);
+    const m = Math.floor(s / 60);
+    document.getElementById('gTimer').textContent =
+      `${m}:${String(s%60).padStart(2,'0')}.${t}`;
+  }, 100);
+}
+
+function stopTimer() {
+  if (timerID) { clearInterval(timerID); timerID = null; }
+}
+
+/* ════════════════════════════════
+   GAME FLOW
+════════════════════════════════ */
+function startGame() {
+  const lv = LEVELS[lvIdx];
+  const arr = shuffle(Array.from({length: lv.size}, (_,i)=>i+1));
+
+  compArr = [...arr]; studArr = [...arr];
+  compI = 0; compJ = 0; compSortedFrom = 0;
+  compHL = []; compSwp = []; compStep = 0;
+  compTotalSteps = totalSteps(lv.size);
+  compDone = false; studDone = false;
+  gameEnded = false; gameActive = true;
+  compFinMs = null; studFinMs = null;
+  studSwaps = 0; selIdx = -1; dragSrc = -1;
+
+  document.getElementById('gLvBadge').textContent = lv.name;
+  document.getElementById('gSpd').textContent = `컴퓨터: ${lv.spd}`;
+  document.getElementById('compBadge').style.display = 'none';
+  document.getElementById('studBadge').style.display = 'none';
+  document.getElementById('compStat').textContent = '정렬 시작!';
+  document.getElementById('studStat').textContent =
+    '카드를 드래그하거나 클릭 두 번으로 위치를 바꾸세요! (오름차순 정렬)';
+  document.getElementById('compBar').style.width = '0%';
+  document.getElementById('studBar').style.width = '0%';
+
+  showScreen('gameScreen');
+  startTimer();
+  renderComp();
+  renderStud();
+  setTimeout(runComp, 600);
+}
+
+function endGame() {
+  gameActive = false;
+  stopTimer();
+  if (compTID) { clearTimeout(compTID); compTID = null; }
+  setTimeout(showResults, 800);
+}
+
+function showResults() {
+  const lv = LEVELS[lvIdx];
+
+  let title, stars, msg, titleColor;
+  const studBeat = studDone && (!compDone || studFinMs < compFinMs);
+
+  if (studBeat) {
+    title = '🏆 당신이 이겼어요!'; stars = '⭐⭐⭐';
+    msg = '컴퓨터보다 빠르게 정렬했습니다! 대단해요!';
+    titleColor = '#fbbf24'; launchConfetti();
+  } else if (studDone) {
+    title = '👏 정렬 완료!'; stars = '⭐⭐';
+    msg = '잘 했어요! 하지만 컴퓨터가 조금 더 빨랐어요.';
+    titleColor = '#4cc9f0';
+  } else {
+    title = '💻 컴퓨터 승리!'; stars = '⭐';
+    msg = '아쉽게도 컴퓨터가 먼저 정렬했어요. 다시 도전해보세요!';
+    titleColor = '#f87171';
+  }
+
+  document.getElementById('resTitle').textContent = title;
+  document.getElementById('resTitle').style.color = titleColor;
+  document.getElementById('resStars').textContent = stars;
+  document.getElementById('resMsg').textContent = msg;
+  document.getElementById('rcComp').textContent = compFinMs ? fmtTime(compFinMs) : '미완료';
+  document.getElementById('rcMe').textContent   = studFinMs ? fmtTime(studFinMs) : '미완료';
+  document.getElementById('rcSwaps').textContent = studSwaps + '회';
+
+  // Next button
+  const nb = document.getElementById('btnNext');
+  if (lvIdx >= LEVELS.length - 1) { nb.textContent = '🎊 모두 완료!'; nb.onclick = goHome; }
+  else { nb.textContent = '다음 레벨 ▶'; nb.onclick = nextLevel; }
+
+  // Final array display
+  const sorted = Array.from({length: lv.size}, (_,i)=>i+1);
+  const ra = document.getElementById('resArr');
+  ra.innerHTML = '';
+  sorted.forEach(v => {
+    const d = document.createElement('div');
+    d.className = 'nc c-done';
+    d.style.cssText = 'width:50px;height:50px;font-size:1.1rem;';
+    d.textContent = v;
+    ra.appendChild(d);
+  });
+
+  showScreen('resultsScreen');
+}
+
+function nextLevel()  { lvIdx = Math.min(lvIdx+1, LEVELS.length-1); startGame(); }
+function retryLevel() { startGame(); }
+function goHome()     {
+  gameActive = false;
+  stopTimer();
+  if (compTID) clearTimeout(compTID);
+  initLvGrid();
+  showScreen('startScreen');
+}
+
+/* ════════════════════════════════
+   SCREEN SWITCH
+════════════════════════════════ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ════════════════════════════════
+   CONFETTI
+════════════════════════════════ */
+function launchConfetti() {
+  const c = document.getElementById('confetti');
+  c.innerHTML = '';
+  const cols = ['#4cc9f0','#4ade80','#fbbf24','#f87171','#c084fc','#fb923c','#e879f9'];
+  for (let k = 0; k < 90; k++) {
+    const p = document.createElement('div');
+    p.className = 'cp';
+    const size = 6 + Math.random()*8;
+    p.style.cssText = `
+      left:${Math.random()*100}%;
+      width:${size}px; height:${size}px;
+      background:${cols[Math.floor(Math.random()*cols.length)]};
+      border-radius:${Math.random()>.5?'50%':'3px'};
+      animation-duration:${1.4+Math.random()*2}s;
+      animation-delay:${Math.random()*.6}s;
+    `;
+    c.appendChild(p);
+  }
+  setTimeout(() => { c.innerHTML = ''; }, 4500);
+}
+
+/* ════════════════════════════════
+   LEVEL SELECT UI
+════════════════════════════════ */
+function initLvGrid() {
+  const g = document.getElementById('lvGrid');
+  g.innerHTML = '';
+  LEVELS.forEach((lv, i) => {
+    const d = document.createElement('div');
+    d.className = 'lv-card' + (i === lvIdx ? ' sel' : '');
+    d.innerHTML = `<div class="lv-name">${lv.name}</div>
+      <div class="lv-meta">숫자 ${lv.size}개<br>컴퓨터: ${lv.spd}</div>`;
+    d.onclick = () => {
+      lvIdx = i;
+      document.querySelectorAll('.lv-card').forEach((c,j) =>
+        c.classList.toggle('sel', i===j));
+    };
+    g.appendChild(d);
+  });
+}
+
+/* ════════════════════════════════
+   INIT
+════════════════════════════════ */
+initLvGrid();
+</script>
+</body>
+</html>
